@@ -20,9 +20,9 @@ interface Organism : Occupant
 data class Extent(val column: Int, val row: Int) : Occupant
 
 /**
- * A cell that contains a device that produces something each generation into adjacent cells over a [spread] at a
- * certain [probability] (with 0 meaning never and 1 meaning always) until exhausting its [supply] (with -1 meaning an
- * infinite supply), at which time the device disintegrates and produce a single something into its own cell at the same
+ * A device that produces something at a [frequency] per generation into adjacent cells over a [spread] with a certain
+ * [probability] (with 0 meaning never and 1 meaning always) until exhausting its [supply] (with -1 meaning an infinite
+ * supply), at which time the device disintegrates and produce a single something into its own cell at the same
  * [probability].
  *
  * The [spread] identifies cells starting with `1` indicating the cell in the row above the device (`D`) and continuing
@@ -35,6 +35,7 @@ data class Extent(val column: Int, val row: Int) : Occupant
  */
 abstract class Device(
     open val spread: IntRange,
+    open val frequency: Float,
     open val probability: Float,
     open var supply: Long,
 ) : Occupant
@@ -42,9 +43,10 @@ abstract class Device(
 /** A device that replicates its host cell's [Substance]s instead of diffusing them into adjacent cells. */
 data class Replicator(
     override val spread: IntRange = 1..8,
+    override val frequency: Float = 1f,
     override val probability: Float = 1f,
     override var supply: Long = -1,
-) : Device(spread, probability, supply) {
+) : Device(spread, frequency, probability, supply) {
     override val view: View? = null
 
     override fun act(column: Int, row: Int, petriDish: PetriDish) {
@@ -56,9 +58,10 @@ data class Replicator(
 data class Spawner(
     val organism: Organism,
     override val spread: IntRange = 1..8,
+    override val frequency: Float = 1f,
     override val probability: Float = 1f,
     override var supply: Long = -1,
-) : Device(spread, probability, supply) {
+) : Device(spread, frequency, probability, supply) {
     override val view: View? = null
 
     override fun act(column: Int, row: Int, petriDish: PetriDish) {
