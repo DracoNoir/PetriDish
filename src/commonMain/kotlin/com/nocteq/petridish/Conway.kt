@@ -23,6 +23,8 @@ data class Conway(
 
     override val view: View? get() = if (alive) _view else null
 
+    override val code = if (alive) "1" else "0"
+
     override fun act(petriDish: PetriDish) {
         val neighbors = isAlive(leftOf, above, petriDish) +
                 isAlive(x, above, petriDish) +

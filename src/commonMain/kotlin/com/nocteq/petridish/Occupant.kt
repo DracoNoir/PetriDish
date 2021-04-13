@@ -3,20 +3,22 @@ package com.nocteq.petridish
 import com.soywiz.korge.view.View
 
 /** An occupant of the cell at [x]:[y]. */
-abstract class Occupant(open var x: Int, open var y: Int) : Actor
+abstract class Occupant(open var x: Int, open var y: Int) : Actor {
+    abstract val code: String
+}
 
 /** Neither an [Organism] nor a [Device]. */
-data class Empty(override var x: Int, override var y: Int) : Occupant(x, y)
+data class Empty(override var x: Int, override var y: Int) : Occupant(x, y) {
+    override val code = " "
+}
 
 /** A living (or pseudo-living) organism. */
 abstract class Organism(override var x: Int, override var y: Int) : Occupant(x, y)
-// TODO storage for any type-specific data
-//    var size: Int = 1,
-//    var orientation: Float = 0f,
-//    var speed: Float = 0f,
 
 /** The body of an [Organism] that extends beyond its center (at [centerX]:[centerY]). */
-data class Extent(override var x: Int, override var y: Int, val centerX: Int, val centerY: Int) : Occupant(x, y)
+data class Extent(override var x: Int, override var y: Int, val centerX: Int, val centerY: Int) : Occupant(x, y) {
+    override val code = " "
+}
 
 /**
  * A device that produces something at a [frequency] per generation into adjacent cells over a [spread] with a certain
@@ -52,6 +54,8 @@ data class Replicator(
 ) : Device(x, y, spread, frequency, probability, supply) {
     override val view: View? = null
 
+    override val code = "R@$supply"
+
     override fun act(petriDish: PetriDish) {
         // TODO replicate local substances
     }
@@ -68,6 +72,8 @@ data class Spawner(
     override var supply: Long = -1,
 ) : Device(x, y, spread, frequency, probability, supply) {
     override val view: View? = null
+
+    override val code = "S.${organism.code}@$supply"
 
     override fun act(petriDish: PetriDish) {
         // TODO spawn organism
