@@ -3,6 +3,7 @@ package com.nocteq.petridish
 import com.soywiz.korge.view.SolidRect
 import com.soywiz.korge.view.View
 import com.soywiz.korge.view.xy
+import com.soywiz.korim.color.Colors
 import kotlin.random.Random
 
 /** An occupant of the cell at [x]:[y]. */
@@ -81,7 +82,7 @@ data class Conway(
     override var x: Int,
     override var y: Int,
     private val alive: Boolean = true,
-    private val _view: View = SolidRect(.95, .95).xy(x, y),
+    private val _view: SolidRect = SolidRect(.95, .95).xy(x, y),
 ) : Organism(x, y) {
     private val leftOf = x - 1
     private val rightOf = x + 1
@@ -99,6 +100,11 @@ data class Conway(
                 isAlive(x, below, petriDish) +
                 isAlive(leftOf, below, petriDish) +
                 isAlive(leftOf, y, petriDish)
+        when {
+            alive && neighbors == 2 -> _view.color = Colors.RED
+            alive && neighbors == 3 -> _view.color = Colors.GREEN
+            !alive && neighbors == 3 -> _view.color = Colors.BLUE
+        }
         petriDish[x, y] = copy(alive = if (alive) neighbors == 2 || neighbors == 3 else neighbors == 3)
     }
 
