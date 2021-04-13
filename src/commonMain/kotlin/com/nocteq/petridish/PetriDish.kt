@@ -134,6 +134,9 @@ fun Stage.petriDish(columns: Int, rows: Int) = PetriDish(columns, rows).addTo(th
 
 /** An actor within the dish. */
 interface Actor {
+    /** Identifies the state of the actor. */
+    val code: String
+
     val view: View? get() = null
 
     fun act(petriDish: PetriDish) {}

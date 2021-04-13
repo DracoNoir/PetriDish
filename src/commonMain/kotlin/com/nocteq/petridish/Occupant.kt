@@ -3,9 +3,7 @@ package com.nocteq.petridish
 import com.soywiz.korge.view.View
 
 /** An occupant of the cell at [x]:[y]. */
-abstract class Occupant(open var x: Int, open var y: Int) : Actor {
-    abstract val code: String
-}
+abstract class Occupant(open var x: Int, open var y: Int) : Actor
 
 /** Neither an [Organism] nor a [Device]. */
 data class Empty(override var x: Int, override var y: Int) : Occupant(x, y) {
