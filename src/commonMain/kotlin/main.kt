@@ -1,6 +1,7 @@
 import com.nocteq.petridish.conway
 import com.nocteq.petridish.petriDish
 import com.soywiz.korge.Korge
+import com.soywiz.korge.input.keys
 import com.soywiz.korim.color.Colors
 
 const val CELL_SIZE = 20
@@ -13,5 +14,12 @@ suspend fun main() = Korge(
     virtualWidth = WIDTH,
     virtualHeight = HEIGHT,
     bgcolor = Colors.BLACK) {
-    petriDish(WIDTH, HEIGHT).conway()
+    val petriDish = petriDish(WIDTH, HEIGHT).apply { conway() }
+
+    keys.typed {
+        when (it.character.toLowerCase()) {
+            'i' -> petriDish.showStatistics = !petriDish.showStatistics
+            'r' -> petriDish.conway()
+        }
+    }
 }

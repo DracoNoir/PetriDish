@@ -1,7 +1,9 @@
 package com.nocteq.petridish
 
 import com.soywiz.kds.Queue
+import com.soywiz.klock.TimeSpan
 import com.soywiz.korge.view.*
+import com.soywiz.korma.math.roundDecimalPlaces
 
 /** Container of all life. */
 class PetriDish(private val columns: Int, private val rows: Int) : Container() {
@@ -15,7 +17,11 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
     private val generationCodes = Queue<Int>()
     private var repeats = 0
 
+    var showStatistics = true
+
     private var message: String? = null
+
+    private val fps = Queue<Double>()
 
     /** Gets the [Occupant] at [x]:[y] in the last generation. */
     operator fun get(x: Int, y: Int) = if (outside(x, y)) Empty(x, y) else last[x][y].occupant
@@ -52,36 +58,43 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
     }
 
     fun populate(block: (x: Int, y: Int) -> Occupant) {
+        resetStats()
+
         for (x in 0 until columns) {
             for (y in 0 until rows) {
                 this[x, y] = block(x, y)
             }
         }
+
+        detect()
         advance()
-        render()
+        render(TimeSpan(0.0))
     }
 
-    private fun generate() {
-        // TODO diffuse energies and agents
+    private fun generate(timeSpan: TimeSpan) {
+        last.forEach { row -> row.forEach { it.act(this) } }
 
-        last.forEach { row -> row.forEach { it.occupant.act(this) } }
+        detect()
+        advance()
+        render(timeSpan)
+    }
 
-        next.map { row -> row.joinToString { it.code } }.joinToString { it }.hashCode().let {
-            generation++
-            if (generationCodes.contains(it)) {
-                if (repeats == 0) {
-                    while (generationCodes.peek() != it) generationCodes.dequeue()
-                    repeats = generationCodes.size
-                    message = "Cycles every $repeats @ ${generation - repeats}"
-                    // TODO repopulate if enabled
-                }
-            } else {
-                generationCodes.enqueue(it)
-                if (generationCodes.size > MAX_GENERATIONS_CHECKED) generationCodes.dequeue()
+    private fun detect() {
+        generation++
+        val generationCode = next.map { row -> row.joinToString { it.code } }.joinToString { it }
+        val generationHash = generationCode.hashCode()
+        if (generationCodes.contains(generationHash)) {
+            if (repeats == 0) {
+                while (generationCodes.peek() != generationHash) generationCodes.dequeue()
+                repeats = generationCodes.size
+                message = "Cycles every $repeats @ ${generation - repeats}"
+                // TODO repopulate if enabled
             }
+        } else {
+            generationCodes.enqueue(generationHash)
+            if (generationCodes.size > MAX_GENERATIONS_CHECKED) generationCodes.dequeue()
         }
 
-        advance()
     }
 
     private fun advance() {
@@ -90,24 +103,35 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
         next = temp
     }
 
-    private fun render() {
+    private fun render(timeSpan: TimeSpan) {
         removeChildren()
-        last.forEach { row ->
-            row.forEach {
-                it.occupant.view?.addTo(this)
+
+        last.forEach { row -> row.forEach { it.render(this) } }
+
+        if (showStatistics) {
+            text("Generation $generation", textSize = 3.0).xy(1, 1).alpha = .5
+            timeSpan.milliseconds.let {
+                if (it > 0.0) fps.enqueue(1000.0 / timeSpan.milliseconds)
+                if (fps.size > 60) fps.dequeue()
             }
+            text("FPS ${fps.average().roundDecimalPlaces(2)}", textSize = 3.0).xy(1, 5).alpha = .5
         }
-        text("Generation $generation", textSize = 3.0).alpha = .5
+
         message?.let { text(it, textSize = 5.0).centerOn(this).alpha = .9 }
+    }
+
+    private fun resetStats() {
+        generation = 0
+        generationCodes.clear()
+        repeats = 0
+        message = null
+        fps.clear()
     }
 
     private fun outside(x: Int, y: Int) = x < 0 || x >= columns || y < 0 || y >= rows
 
     init {
-        addUpdater {
-            generate()
-            render()
-        }
+        addUpdater { generate(it) }
     }
 
     /** Contents of a cell within the [PetriDish]. */
@@ -118,8 +142,21 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
         val agents: MutableMap<Agent.Type, Agent> = mutableMapOf(),
         val energies: MutableMap<Energy.Type, Energy> = mutableMapOf(),
     ) {
-        // TODO include agents and energies
-        val code = occupant.code
+        val code
+            get() = occupant.code + agents.values.joinToString { it.code } + energies.values.joinToString { it.code }
+
+
+        fun act(petriDish: PetriDish) {
+            occupant.act(petriDish)
+            agents.values.forEach { it.act(petriDish) }
+            energies.values.forEach { it.act(petriDish) }
+        }
+
+        fun render(petriDish: PetriDish) {
+            agents.values.mapNotNull { it.view }.forEach { it.addTo(petriDish) }
+            occupant.view?.addTo(petriDish)
+            energies.values.mapNotNull { it.view }.forEach { it.addTo(petriDish) }
+        }
     }
 
     companion object {
