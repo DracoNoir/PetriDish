@@ -9,7 +9,7 @@ package com.nocteq.petridish
  * equal to or less than [dissolution], then the substance dissolves into nothing; if the resulting amount exceeds
  * [saturation], then the excess amount evaporates into nothing.
  */
-sealed class Substance(open var intensity: Float, open val dissolution: Float, open val saturation: Float)
+sealed class Substance(open var intensity: Float, open val dissolution: Float, open val saturation: Float) : Actor
 
 /** An energy. */
 data class Energy(
