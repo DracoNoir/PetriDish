@@ -19,7 +19,7 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
 
     var running = true
     var step = false
-    var showStatistics = true
+    var showStatistics = false
 
     private var message: String? = null
 
@@ -60,7 +60,7 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
     }
 
     fun populate(block: (x: Int, y: Int) -> Occupant) {
-        resetStats()
+        resetState()
 
         for (x in 0 until columns) {
             for (y in 0 until rows) {
@@ -135,11 +135,17 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
         }
     }
 
-    private fun resetStats() {
+    private fun resetState() {
         generation = 0
         generationCodes.clear()
         repeats = 0
+
+        running = true
+        step = false
+        showStatistics = false
+
         message = null
+
         fps.clear()
     }
 
