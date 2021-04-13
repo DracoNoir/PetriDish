@@ -18,6 +18,8 @@ suspend fun main() = Korge(
 
     keys.typed {
         when (it.character.toLowerCase()) {
+            ' ' -> petriDish.running = !petriDish.running
+            '\t' -> petriDish.step = !petriDish.step
             'i' -> petriDish.showStatistics = !petriDish.showStatistics
             'r' -> petriDish.conway()
         }

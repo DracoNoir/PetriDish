@@ -17,6 +17,8 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
     private val generationCodes = Queue<Int>()
     private var repeats = 0
 
+    var running = true
+    var step = false
     var showStatistics = true
 
     private var message: String? = null
@@ -72,10 +74,13 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
     }
 
     private fun generate(timeSpan: TimeSpan) {
-        last.forEach { row -> row.forEach { it.act(this) } }
+        if (running || step) {
+            step = false
+            last.forEach { row -> row.forEach { it.act(this) } }
 
-        detect()
-        advance()
+            detect()
+            advance()
+        }
         render(timeSpan)
     }
 
@@ -88,6 +93,7 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
                 while (generationCodes.peek() != generationHash) generationCodes.dequeue()
                 repeats = generationCodes.size
                 message = "Cycles every $repeats @ ${generation - repeats}"
+                running = false
                 // TODO repopulate if enabled
             }
         } else {
@@ -117,7 +123,16 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
             text("FPS ${fps.average().roundDecimalPlaces(2)}", textSize = 3.0).xy(1, 5).alpha = .5
         }
 
-        message?.let { text(it, textSize = 5.0).centerOn(this).alpha = .9 }
+        message?.let {
+            text(it, textSize = 5.0).centerXOn(this).apply {
+                y = 1.0
+                alpha = .9
+            }
+        }
+
+        if (!running) {
+            text("Paused", textSize = 10.0).centerOnStage().alpha = .9
+        }
     }
 
     private fun resetStats() {
