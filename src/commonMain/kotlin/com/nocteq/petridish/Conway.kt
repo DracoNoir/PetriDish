@@ -13,7 +13,7 @@ import kotlin.random.Random
 data class Conway(
     override var x: Int,
     override var y: Int,
-    private val alive: Boolean = true,
+    var alive: Boolean = true,
     private val _view: SolidRect = SolidRect(.95, .95).xy(x, y),
 ) : Organism(x, y) {
     private val leftOf = x - 1

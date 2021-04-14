@@ -15,7 +15,8 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
 
     private var generation = 0
     private val generationCodes = Queue<Int>()
-    private var repeats = 0
+
+    var cycle = 0
 
     var running = true
     var step = false
@@ -43,6 +44,12 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
     /** Gets the local intensity of [type] energy at [x]:[y] in the last generation. */
     fun local(x: Int, y: Int, type: Energy.Type) =
         if (outside(x, y)) 0f else last[x][y].energies[type]?.intensity ?: 0f
+
+    /** Sets the [occupant] in the next generation. */
+    operator fun plusAssign(occupant: Occupant) {
+        last[occupant.x][occupant.y].occupant = occupant
+        cycle = 0
+    }
 
     /** Sets the [occupant] at [x]:[y] in the next generation. */
     operator fun set(x: Int, y: Int, occupant: Occupant) {
@@ -89,12 +96,11 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
         val generationCode = next.map { row -> row.joinToString { it.code } }.joinToString { it }
         val generationHash = generationCode.hashCode()
         if (generationCodes.contains(generationHash)) {
-            if (repeats == 0) {
+            if (cycle == 0) {
                 while (generationCodes.peek() != generationHash) generationCodes.dequeue()
-                repeats = generationCodes.size
-                message = "Cycles every $repeats @ ${generation - repeats}"
+                cycle = generation - generationCodes.size
+
                 running = false
-                // TODO repopulate if enabled
             }
         } else {
             generationCodes.enqueue(generationHash)
@@ -123,8 +129,8 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
             text("FPS ${fps.average().roundDecimalPlaces(2)}", textSize = 3.0).xy(1, 5).alpha = .5
         }
 
-        message?.let {
-            text(it, textSize = 5.0).centerXOn(this).apply {
+        if (cycle > 0) {
+            text("Cycle every ${generationCodes.size} @ $cycle", textSize = 5.0).centerXOn(this).apply {
                 y = 1.0
                 alpha = .9
             }
@@ -138,7 +144,8 @@ class PetriDish(private val columns: Int, private val rows: Int) : Container() {
     private fun resetState() {
         generation = 0
         generationCodes.clear()
-        repeats = 0
+
+        cycle = 0
 
         running = true
         step = false
